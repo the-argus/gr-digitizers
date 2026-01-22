@@ -29,17 +29,17 @@ const boost::ut::suite<"TimingMatchers"> TimingMatcherTests = [] {
 
     auto generateTimingTag = [](std::string&& event, std::uint64_t time, float offset, bool hwTrigger = true, std::optional<std::uint64_t> localTime = std::nullopt) {
         return gr::property_map{
-            {gr::tag::TRIGGER_NAME.shortKey(), std::move(event)},
-            {gr::tag::TRIGGER_TIME.shortKey(), time},
-            {gr::tag::TRIGGER_OFFSET.shortKey(), offset},
-            {gr::tag::TRIGGER_META_INFO.shortKey(), gr::property_map{{"LOCAL-TIME", localTime.value_or(time)}, {"HW-TRIGGER", hwTrigger}}},
+            {gr::tag::TRIGGER_NAME.shortKey(), gr::pmt::Value{std::move(event)}},
+            {gr::tag::TRIGGER_TIME.shortKey(), gr::pmt::Value{time}},
+            {gr::tag::TRIGGER_OFFSET.shortKey(), gr::pmt::Value{offset}},
+            {gr::tag::TRIGGER_META_INFO.shortKey(), gr::property_map{{"LOCAL-TIME", gr::pmt::Value{localTime.value_or(time)}}, {"HW-TRIGGER", gr::pmt::Value{hwTrigger}}}},
         };
     };
     auto generateUnknownTag = [](std::string&& event, std::uint64_t time, float offset, bool hwTrigger = true, std::optional<std::uint64_t> localTime = std::nullopt) {
         return gr::property_map{
-            {gr::tag::TRIGGER_NAME.shortKey(), std::move(event)},
-            {gr::tag::TRIGGER_OFFSET.shortKey(), offset},
-            {gr::tag::TRIGGER_META_INFO.shortKey(), gr::property_map{{"LOCAL-TIME", localTime.value_or(time)}, {"HW-TRIGGER", hwTrigger}}},
+            {gr::tag::TRIGGER_NAME.shortKey(), gr::pmt::Value{std::move(event)}},
+            {gr::tag::TRIGGER_OFFSET.shortKey(), gr::pmt::Value{offset}},
+            {gr::tag::TRIGGER_META_INFO.shortKey(), gr::property_map{{"LOCAL-TIME", gr::pmt::Value{localTime.value_or(time)}}, {"HW-TRIGGER", gr::pmt::Value{hwTrigger}}}},
         };
     };
 
@@ -188,7 +188,7 @@ const boost::ut::suite<"TimingMatchers"> TimingMatcherTests = [] {
 
         expect(eq(4UZ, result.processedTags));
         expect(eq(240UZ, result.processedSamples));
-        expect(approx(std::get<float>(result.tags[2].map.at(gr::tag::TRIGGER_OFFSET.shortKey())), 0.0f, 1e-10f));
+        expect(approx(result.tags[2].map.at(gr::tag::TRIGGER_OFFSET.shortKey()).value_or(INFINITY), 0.0f, 1e-10f));
         result.tags[2].map.at(gr::tag::TRIGGER_OFFSET.shortKey()) = 0.0f;
 
         expectRangesEquals(
@@ -378,11 +378,11 @@ const boost::ut::suite<"TimingMatchers"> TimingMatcherTests = [] {
         expect(eq(240UZ, result.processedSamples));
 
         // check and fix inexact offsets
-        expect(approx(std::get<float>(result.tags[0].map.at(gr::tag::TRIGGER_OFFSET.shortKey())), 0.0f, 1e-10f));
+        expect(approx(result.tags[0].map.at(gr::tag::TRIGGER_OFFSET.shortKey()).value_or(INFINITY), 0.0f, 1e-10f));
         result.tags[0].map.at(gr::tag::TRIGGER_OFFSET.shortKey()) = 0.0f;
-        expect(approx(std::get<float>(result.tags[1].map.at(gr::tag::TRIGGER_OFFSET.shortKey())), 0.0f, 1e-10f));
+        expect(approx(result.tags[1].map.at(gr::tag::TRIGGER_OFFSET.shortKey()).value_or(INFINITY), 0.0f, 1e-10f));
         result.tags[1].map.at(gr::tag::TRIGGER_OFFSET.shortKey()) = 0.0f;
-        expect(approx(std::get<float>(result.tags[2].map.at(gr::tag::TRIGGER_OFFSET.shortKey())), 0.7f, 1e-10f));
+        expect(approx(result.tags[2].map.at(gr::tag::TRIGGER_OFFSET.shortKey()).value_or(INFINITY), 0.7f, 1e-10f));
         result.tags[2].map.at(gr::tag::TRIGGER_OFFSET.shortKey()) = 0.0f;
 
         expectRangesEquals(

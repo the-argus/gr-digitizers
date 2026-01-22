@@ -82,40 +82,40 @@ void testRapidBlockBasic(std::size_t nCaptures, float sampleRate = 1234567.f, st
 
     Graph        flowGraph;
     property_map params = {
-        {"sample_rate", sampleRate},
-        {"pre_samples", preSamples},
-        {"post_samples", postSamples},
-        {"n_captures", nCaptures},
-        {"auto_arm", true},
-        {"trigger_once", true},
-        {"channel_ids", std::vector<std::string>{"A"}},
-        {"channel_ranges", std::vector<float>{5.f}},
-        {"trigger_threshold", 0.0f},
-        {"channel_couplings", std::vector<std::string>{"AC"}},
-        {"digital_port_invert_output", digitalPortInvertOutput},
+        {"sample_rate", gr::pmt::Value{sampleRate}},
+        {"pre_samples", gr::pmt::Value{preSamples}},
+        {"post_samples", gr::pmt::Value{postSamples}},
+        {"n_captures", gr::pmt::Value{nCaptures}},
+        {"auto_arm", gr::pmt::Value{true}},
+        {"trigger_once", gr::pmt::Value{true}},
+        {"channel_ids", gr::pmt::Value{gr::Tensor<std::pmr::string>{"A"}}},
+        {"channel_ranges", gr::pmt::Value{gr::Tensor<float>{5.f}}},
+        {"trigger_threshold", gr::pmt::Value{0.0f}},
+        {"channel_couplings", gr::pmt::Value{gr::Tensor<std::pmr::string>{"AC"}}},
+        {"digital_port_invert_output", gr::pmt::Value{digitalPortInvertOutput}},
     };
     if (!triggerSource.empty()) {
         params.insert_or_assign("trigger_source", triggerSource);
     }
     auto& ps    = flowGraph.emplaceBlock<Picoscope<T, PicoscopeT>>(params);
-    auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", true}, {"log_tags", false}});
-    auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", true}, {"log_tags", false}});
-    auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-    auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+    auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+    auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+    auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+    auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 0>(ps).template to<"in">(sinkA)));
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 1>(ps).template to<"in">(sinkB)));
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 2>(ps).template to<"in">(sinkC)));
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 3>(ps).template to<"in">(sinkD)));
 
-    auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", true}, {"log_tags", false}});
+    auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"digitalOut">(ps).template to<"in">(sinkDigital)));
 
     if constexpr (std::is_same_v<Picoscope4000a, PicoscopeT>) {
-        auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 4>(ps).template to<"in">(sinkE)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 5>(ps).template to<"in">(sinkF)));
@@ -204,21 +204,21 @@ void testStreamingBasics(float sampleRate = 83000.f, bool testDigitalOutput = fa
     const uint16_t digitalPortExactValue    = 8; // 2^n, n = connected port index (assuming that only one port is connected)
 
     auto& ps = flowGraph.emplaceBlock<Picoscope<T, PicoscopeT>>({
-        {"sample_rate", sampleRate},
-        {"auto_arm", true},
-        {"channel_ids", std::vector<std::string>{"A"}},
-        {"signal_names", std::vector<std::string>{"Test signal"}},
-        {"signal_units", std::vector<std::string>{"Test unit"}},
-        {"channel_ranges", std::vector<float>{5.f}},
-        {"channel_couplings", std::vector<std::string>{"AC"}},
-        {"digital_port_invert_output", digitalPortInvertOutput},
+        {"sample_rate", gr::pmt::Value{sampleRate}},
+        {"auto_arm", gr::pmt::Value{true}},
+        {"channel_ids", gr::Tensor<std::pmr::string>{"A"}},
+        {"signal_names", gr::Tensor<std::pmr::string>{"Test signal"}},
+        {"signal_units", gr::Tensor<std::pmr::string>{"Test unit"}},
+        {"channel_ranges", gr::Tensor<float>{5.f}},
+        {"channel_couplings", gr::Tensor<std::pmr::string>{"AC"}},
+        {"digital_port_invert_output", gr::pmt::Value{digitalPortInvertOutput}},
     });
 
-    auto& tagMonitor = flowGraph.emplaceBlock<testing::TagMonitor<T, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", true}});
-    auto& sinkA      = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-    auto& sinkB      = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-    auto& sinkC      = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-    auto& sinkD      = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+    auto& tagMonitor = flowGraph.emplaceBlock<testing::TagMonitor<T, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{true}}});
+    auto& sinkA      = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+    auto& sinkB      = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+    auto& sinkC      = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+    auto& sinkD      = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 0>(ps, minPicoBufferSize).template to<"in">(tagMonitor)));
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out">(tagMonitor, minPicoBufferSize).template to<"in">(sinkA)));
@@ -226,14 +226,14 @@ void testStreamingBasics(float sampleRate = 83000.f, bool testDigitalOutput = fa
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 2>(ps, minPicoBufferSize).template to<"in">(sinkC)));
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 3>(ps, minPicoBufferSize).template to<"in">(sinkD)));
 
-    auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<uint16_t>>({{"log_samples", testDigitalOutput}, {"log_tags", false}});
+    auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<uint16_t>>({{"log_samples", gr::pmt::Value{testDigitalOutput}}, {"log_tags", gr::pmt::Value{false}}});
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"digitalOut">(ps, minPicoBufferSize).template to<"in">(sinkDigital)));
 
     if constexpr (std::is_same_v<Picoscope4000a, PicoscopeT>) {
-        auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 4>(ps, minPicoBufferSize).template to<"in">(sinkE)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 5>(ps, minPicoBufferSize).template to<"in">(sinkF)));
@@ -268,11 +268,11 @@ void testStreamingBasics(float sampleRate = 83000.f, bool testDigitalOutput = fa
     if (tagMonitor._tags.size() == 1UZ) {
         const auto& tag = tagMonitor._tags[0];
         expect(eq(tag.index, 0UZ));
-        expect(eq(std::get<float>(tag.at(std::string(tag::SAMPLE_RATE.shortKey()))), sampleRate));
-        expect(eq(std::get<std::string>(tag.at(std::string(tag::SIGNAL_NAME.shortKey()))), "Test signal"s));
-        expect(eq(std::get<std::string>(tag.at(std::string(tag::SIGNAL_UNIT.shortKey()))), "Test unit"s));
-        expect(eq(std::get<float>(tag.at(std::string(tag::SIGNAL_MIN.shortKey()))), -5.f));
-        expect(eq(std::get<float>(tag.at(std::string(tag::SIGNAL_MAX.shortKey()))), 5.f));
+        expect(eq(tag.at(std::string(tag::SAMPLE_RATE.shortKey())).value_or(INFINITY), sampleRate));
+        expect(eq(tag.at(std::string(tag::SIGNAL_NAME.shortKey())).value_or(std::string_view{}), "Test signal"s));
+        expect(eq(tag.at(std::string(tag::SIGNAL_UNIT.shortKey())).value_or(std::string_view{}), "Test unit"s));
+        expect(eq(tag.at(std::string(tag::SIGNAL_MIN.shortKey())).value_or(INFINITY), -5.f));
+        expect(eq(tag.at(std::string(tag::SIGNAL_MAX.shortKey())).value_or(INFINITY), 5.f));
     }
 
     // Digital output testing relies on the actual test setup.
@@ -352,35 +352,35 @@ const boost::ut::suite PicoscopeTests = [] {
 
         Graph flowGraph;
         auto& ps = flowGraph.emplaceBlock<Picoscope<T, PicoscopeT>>({
-            {"sample_rate", 10000.f},
-            {"pre_samples", preSamples},
-            {"post_samples", postSamples},
-            {"n_captures", nCaptures},
-            {"auto_arm", true},
-            {"trigger_once", true},
-            {"channel_ids", std::vector<std::string>{"A", "B", "C"}},
-            {"channel_ranges", std::vector<float>{{5.f, 5.f, 5.f}}},
-            {"channel_couplings", std::vector<std::string>{"AC", "AC", "AC"}},
+            {"sample_rate", gr::pmt::Value{10000.f}},
+            {"pre_samples", gr::pmt::Value{preSamples}},
+            {"post_samples", gr::pmt::Value{postSamples}},
+            {"n_captures", gr::pmt::Value{nCaptures}},
+            {"auto_arm", gr::pmt::Value{true}},
+            {"trigger_once", gr::pmt::Value{true}},
+            {"channel_ids", gr::Tensor<std::pmr::string>{"A", "B", "C"}},
+            {"channel_ranges", gr::Tensor<float>{{5.f, 5.f, 5.f}}},
+            {"channel_couplings", gr::Tensor<std::pmr::string>{"AC", "AC", "AC"}},
         });
 
-        auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", true}, {"log_tags", false}});
-        auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", true}, {"log_tags", false}});
-        auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", true}, {"log_tags", false}});
-        auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", true}, {"log_tags", false}});
+        auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
 
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 0>(ps).template to<"in">(sinkA)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 1>(ps).template to<"in">(sinkB)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 2>(ps).template to<"in">(sinkC)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 3>(ps).template to<"in">(sinkD)));
 
-        auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"digitalOut">(ps).template to<"in">(sinkDigital)));
 
         if constexpr (std::is_same_v<Picoscope4000a, PicoscopeT>) {
-            auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+            auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
             expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 4>(ps).template to<"in">(sinkE)));
             expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 5>(ps).template to<"in">(sinkF)));
@@ -430,34 +430,34 @@ const boost::ut::suite PicoscopeTests = [] {
 
         Graph flowGraph;
         auto& ps = flowGraph.emplaceBlock<Picoscope<T, PicoscopeT>>({
-            {"sample_rate", sampleRate},
-            {"pre_samples", preSamples},
-            {"post_samples", postSamples},
-            {"n_captures", gr::Size_t{1}},
-            {"auto_arm", true},
-            {"channel_ids", std::vector<std::string>{"A"}},
-            {"channel_ranges", std::vector<float>{5.f}},
-            {"channel_couplings", std::vector<std::string>{"AC"}},
+            {"sample_rate", gr::pmt::Value{sampleRate}},
+            {"pre_samples", gr::pmt::Value{preSamples}},
+            {"post_samples", gr::pmt::Value{postSamples}},
+            {"n_captures", gr::pmt::Value{gr::Size_t{1}}},
+            {"auto_arm", gr::pmt::Value{true}},
+            {"channel_ids", gr::Tensor<std::pmr::string>{"A"}},
+            {"channel_ranges", gr::Tensor<float>{5.f}},
+            {"channel_couplings", gr::Tensor<std::pmr::string>{"AC"}},
         });
 
-        auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", true}, {"log_tags", false}});
-        auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 0>(ps).template to<"in">(sinkA)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 1>(ps).template to<"in">(sinkB)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 2>(ps).template to<"in">(sinkC)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 3>(ps).template to<"in">(sinkD)));
 
-        auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"digitalOut">(ps).template to<"in">(sinkDigital)));
 
         if constexpr (std::is_same_v<Picoscope4000a, PicoscopeT>) {
-            auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+            auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
             expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 4>(ps).template to<"in">(sinkE)));
             expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 5>(ps).template to<"in">(sinkF)));
@@ -489,8 +489,8 @@ const boost::ut::suite PicoscopeTests = [] {
         using namespace gr::tag;
 
         const auto testCase = [](bool expectedResult, const std::string& triggerNameAndCtx, const std::string& tagTriggerName, const std::string& tagCtx, bool includeCtx) { //
-            const auto tag = Tag(0, includeCtx ? property_map{{TRIGGER_NAME.shortKey(), tagTriggerName}, {CONTEXT.shortKey(), tagCtx}}                                       //
-                                               : property_map{{TRIGGER_NAME.shortKey(), tagTriggerName}});
+            const auto tag = Tag(0, includeCtx ? property_map{{TRIGGER_NAME.shortKey(), gr::pmt::Value{tagTriggerName}}, {CONTEXT.shortKey(), gr::pmt::Value{tagCtx}}}       //
+                                               : property_map{{TRIGGER_NAME.shortKey(), gr::pmt::Value{tagTriggerName}}});
             const bool res = detail::tagContainsTrigger(tag.map, detail::createTriggerNameAndCtx(triggerNameAndCtx));
             expect(eq(expectedResult, res)) << std::format("triggerNameAndCtx:{}, tag.map:{}", triggerNameAndCtx, tag.map);
         };
@@ -531,11 +531,11 @@ const boost::ut::suite PicoscopeTests = [] {
         constexpr auto       testDuration = 12s;
 
         const auto createTriggerPropertyMap = [](const std::string& triggerName, const std::string& context, std::uint64_t time, float offset = 0.f) { //
-            return property_map{{TRIGGER_NAME.shortKey(), triggerName}, {TRIGGER_TIME.shortKey(), std::uint64_t{time}}, {TRIGGER_OFFSET.shortKey(), offset}, {CONTEXT.shortKey(), context}};
+            return property_map{{TRIGGER_NAME.shortKey(), gr::pmt::Value{triggerName}}, {TRIGGER_TIME.shortKey(), gr::pmt::Value{std::uint64_t{time}}}, {TRIGGER_OFFSET.shortKey(), gr::pmt::Value{offset}}, {CONTEXT.shortKey(), gr::pmt::Value{context}}};
         };
 
         Graph flowGraph;
-        auto& clockSrc = flowGraph.emplaceBlock<gr::basic::ClockSource<std::uint8_t>>({{"sample_rate", sampleRate}, {"chunk_size", gr::Size_t{1}}, {"n_samples_max", gr::Size_t{0}}, {"name", "ClockSource"}, {"verbose_console", true}});
+        auto& clockSrc = flowGraph.emplaceBlock<gr::basic::ClockSource<std::uint8_t>>({{"sample_rate", gr::pmt::Value{sampleRate}}, {"chunk_size", gr::pmt::Value{gr::Size_t{1}}}, {"n_samples_max", gr::pmt::Value{gr::Size_t{0}}}, {"name", gr::pmt::Value{"ClockSource"}}, {"verbose_console", gr::pmt::Value{true}}});
 
         clockSrc.tags = {
             Tag(1000, createTriggerPropertyMap("CMD_BP_START", "FAIR.SELECTOR.C=1:S=1:P=1", static_cast<std::uint64_t>(1000))), // OK
@@ -552,22 +552,22 @@ const boost::ut::suite PicoscopeTests = [] {
         }; // disarm trigger
 
         auto& ps = flowGraph.emplaceBlock<Picoscope<T, PicoscopeT>>({
-            {"sample_rate", sampleRate},
-            {"pre_samples", preSamples},
-            {"post_samples", postSamples},
-            {"trigger_arm", "CMD_BP_START/FAIR.SELECTOR.C=1:S=1:P=1"},
-            {"trigger_disarm", "CMD_BP_STOP/FAIR.SELECTOR.C=1:S=1:P=1"},
-            {"n_captures", gr::Size_t{1}},
-            {"auto_arm", false},
-            {"channel_ids", std::vector<std::string>{"A"}},
-            {"channel_ranges", std::vector<float>{5.f}},
-            {"channel_couplings", std::vector<std::string>{"AC"}},
+            {"sample_rate", gr::pmt::Value{sampleRate}},
+            {"pre_samples", gr::pmt::Value{preSamples}},
+            {"post_samples", gr::pmt::Value{postSamples}},
+            {"trigger_arm", gr::pmt::Value{"CMD_BP_START/FAIR.SELECTOR.C=1:S=1:P=1"}},
+            {"trigger_disarm", gr::pmt::Value{"CMD_BP_STOP/FAIR.SELECTOR.C=1:S=1:P=1"}},
+            {"n_captures", gr::pmt::Value{gr::Size_t{1}}},
+            {"auto_arm", gr::pmt::Value{false}},
+            {"channel_ids", gr::Tensor<std::pmr::string>{"A"}},
+            {"channel_ranges", gr::Tensor<float>{5.f}},
+            {"channel_couplings", gr::Tensor<std::pmr::string>{"AC"}},
         });
 
-        auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", true}, {"log_tags", false}});
-        auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out">(clockSrc).to<"timingIn">(ps)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 0>(ps).template to<"in">(sinkA)));
@@ -575,14 +575,14 @@ const boost::ut::suite PicoscopeTests = [] {
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 2>(ps).template to<"in">(sinkC)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 3>(ps).template to<"in">(sinkD)));
 
-        auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"digitalOut">(ps).template to<"in">(sinkDigital)));
 
         if constexpr (std::is_same_v<Picoscope4000a, PicoscopeT>) {
-            auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+            auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
             expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 4>(ps).template to<"in">(sinkE)));
             expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 5>(ps).template to<"in">(sinkF)));
@@ -627,15 +627,21 @@ const boost::ut::suite PicoscopeTests = [] {
 
         const auto createTriggerPropertyMap = [](const std::string& triggerName, const std::string& context, std::uint64_t time, float offset = 0.f) { //
             return property_map{
-                {TRIGGER_NAME.shortKey(), triggerName},
-                {TRIGGER_TIME.shortKey(), std::uint64_t{time}},
-                {TRIGGER_OFFSET.shortKey(), offset},
-                {CONTEXT.shortKey(), context},
+                {TRIGGER_NAME.shortKey(), gr::pmt::Value{triggerName}},
+                {TRIGGER_TIME.shortKey(), gr::pmt::Value{std::uint64_t{time}}},
+                {TRIGGER_OFFSET.shortKey(), gr::pmt::Value{offset}},
+                {CONTEXT.shortKey(), gr::pmt::Value{context}},
             };
         };
 
         Graph flowGraph;
-        auto& clockSrc = flowGraph.emplaceBlock<gr::basic::ClockSource<std::uint8_t>>({{"sample_rate", sampleRate}, {"chunk_size", gr::Size_t{1}}, {"n_samples_max", gr::Size_t{0}}, {"name", "ClockSource"}, {"verbose_console", true}});
+        auto& clockSrc = flowGraph.emplaceBlock<gr::basic::ClockSource<std::uint8_t>>({
+            {"sample_rate", gr::pmt::Value{sampleRate}},
+            {"chunk_size", gr::pmt::Value{gr::Size_t{1}}},
+            {"n_samples_max", gr::pmt::Value{gr::Size_t{0}}},
+            {"name", gr::pmt::Value{"ClockSource"}},
+            {"verbose_console", gr::pmt::Value{true}},
+        });
 
         clockSrc.tags = {
             Tag(1000, createTriggerPropertyMap("CMD_BP_START", "FAIR.SELECTOR.C=1:S=1:P=1", static_cast<std::uint64_t>(1000))), //
@@ -643,22 +649,22 @@ const boost::ut::suite PicoscopeTests = [] {
         };
 
         auto& ps = flowGraph.emplaceBlock<Picoscope<T, PicoscopeT>>({
-            {"sample_rate", sampleRate},
-            {"pre_samples", preSamples},
-            {"post_samples", postSamples},
-            {"trigger_arm", "CMD_BP_START/FAIR.SELECTOR.C=1:S=1:P=1"},
-            {"trigger_disarm", "CMD_BP_STOP/FAIR.SELECTOR.C=1:S=1:P=1"},
-            {"n_captures", nCaptures},
-            {"auto_arm", false},
-            {"channel_ids", std::vector<std::string>{"A"}},
-            {"channel_ranges", std::vector<float>{5.f}},
-            {"channel_couplings", std::vector<std::string>{"AC"}},
+            {"sample_rate", gr::pmt::Value{sampleRate}},
+            {"pre_samples", gr::pmt::Value{preSamples}},
+            {"post_samples", gr::pmt::Value{postSamples}},
+            {"trigger_arm", gr::pmt::Value{"CMD_BP_START/FAIR.SELECTOR.C=1:S=1:P=1"}},
+            {"trigger_disarm", gr::pmt::Value{"CMD_BP_STOP/FAIR.SELECTOR.C=1:S=1:P=1"}},
+            {"n_captures", gr::pmt::Value{nCaptures}},
+            {"auto_arm", gr::pmt::Value{false}},
+            {"channel_ids", gr::Tensor<std::pmr::string>{"A"}},
+            {"channel_ranges", gr::Tensor<float>{5.f}},
+            {"channel_couplings", gr::Tensor<std::pmr::string>{"AC"}},
         });
 
-        auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", true}, {"log_tags", false}});
-        auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkA = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkB = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkC = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkD = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out">(clockSrc).to<"timingIn">(ps)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 0>(ps).template to<"in">(sinkA)));
@@ -666,14 +672,14 @@ const boost::ut::suite PicoscopeTests = [] {
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 2>(ps).template to<"in">(sinkC)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 3>(ps).template to<"in">(sinkD)));
 
-        auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkDigital = flowGraph.emplaceBlock<BulkTagSink<gr::DataSet<uint16_t>>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"digitalOut">(ps).template to<"in">(sinkDigital)));
 
         if constexpr (std::is_same_v<Picoscope4000a, PicoscopeT>) {
-            auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
-            auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", false}, {"log_tags", false}});
+            auto& sinkE = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkF = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkG = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+            auto& sinkH = flowGraph.emplaceBlock<BulkTagSink<T>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
             expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 4>(ps).template to<"in">(sinkE)));
             expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 5>(ps).template to<"in">(sinkF)));
@@ -693,7 +699,7 @@ const boost::ut::suite PicoscopeTests = [] {
         // gr::sendMessage<gr::message::Command::Set>(_toScheduler, sched.unique_name, gr::block::property::kLifeCycleState, {{"state", std::string(magic_enum::enum_name(gr::lifecycle::State::RUNNING))}}, "test");
         std::this_thread::sleep_for(testDuration);
         std::println("stopping scheduler");
-        gr::sendMessage<gr::message::Command::Set>(_toScheduler, sched.unique_name, gr::block::property::kLifeCycleState, {{"state", std::string(magic_enum::enum_name(gr::lifecycle::State::REQUESTED_STOP))}}, "test");
+        gr::sendMessage<gr::message::Command::Set>(_toScheduler, sched.unique_name, gr::block::property::kLifeCycleState, {{"state", gr::pmt::Value{std::string(magic_enum::enum_name(gr::lifecycle::State::REQUESTED_STOP))}}}, "test");
         std::println("stopped scheduler");
 
         expect(ge(sinkA._nSamplesProduced, 1UZ));

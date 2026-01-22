@@ -88,36 +88,36 @@ void testStreamingWithTiming(const float kSampleRate = 1000.f, const std::chrono
 
     gr::Graph flowGraph;
     auto&     timingSrc = flowGraph.emplaceBlock<gr::timing::TimingSource>({
-        {"event_actions", std::vector<std::string>({std::format("SIS100_RING:CMD_CUSTOM_DIAG_1->IO3({},on,{},off),PUBLISH()", pulseOnTime, pulseOffTime)})},
-        {"io_events", true},
-        {"sample_rate", 0.0f},
-        {"verbose_console", true},
+        {"event_actions", gr::Tensor<std::pmr::string>({std::pmr::string{std::format("SIS100_RING:CMD_CUSTOM_DIAG_1->IO3({},on,{},off),PUBLISH()", pulseOnTime, pulseOffTime)}})},
+        {"io_events", gr::pmt::Value{true}},
+        {"sample_rate", gr::pmt::Value{0.0f}},
+        {"verbose_console", gr::pmt::Value{true}},
     });
 
     const std::size_t matcher_timeout     = 30'000'000UZ; // * 10'000 / static_cast<std::size_t>(kSampleRate);
     const bool        digital_port_enable = TPSImpl::N_DIGITAL_CHANNELS > 0;
 
     auto& ps = flowGraph.emplaceBlock<Picoscope<float, TPSImpl>>({{
-        {"sample_rate", kSampleRate},
-        {"auto_arm", true},
-        {"channel_ids", std::vector<std::string>{"A", "B", TPSImpl::N_ANALOG_CHANNELS > 4 ? "H" : "D"}},
-        {"signal_names", std::vector<std::string>{"IO1", "IO2", "Trigger"}},
-        {"signal_units", std::vector<std::string>{"V", "V", "V"}},
-        {"channel_ranges", std::vector<float>{5.f, 5.f, 5.f}},
-        {"signal_offsets", std::vector<float>{0.f, 0.f, 0.f}},
-        {"channel_couplings", std::vector<std::string>{"DC", "DC", "DC"}},
-        {"trigger_source", triggerName},
-        {"trigger_threshold", 1.7f},
-        {"trigger_direction", "Rising"},
-        {"matcher_timeout", matcher_timeout},
-        {"digital_port_enable", digital_port_enable},
-        {"verbose_console", true},
+        {"sample_rate", gr::pmt::Value{kSampleRate}},
+        {"auto_arm", gr::pmt::Value{true}},
+        {"channel_ids", gr::Tensor<std::pmr::string>{"A", "B", TPSImpl::N_ANALOG_CHANNELS > 4 ? "H" : "D"}},
+        {"signal_names", gr::Tensor<std::pmr::string>{"IO1", "IO2", "Trigger"}},
+        {"signal_units", gr::Tensor<std::pmr::string>{"V", "V", "V"}},
+        {"channel_ranges", gr::Tensor<float>{5.f, 5.f, 5.f}},
+        {"signal_offsets", gr::Tensor<float>{0.f, 0.f, 0.f}},
+        {"channel_couplings", gr::Tensor<std::pmr::string>{"DC", "DC", "DC"}},
+        {"trigger_source", gr::pmt::Value{triggerName}},
+        {"trigger_threshold", gr::pmt::Value{1.7f}},
+        {"trigger_direction", gr::pmt::Value{"Rising"}},
+        {"matcher_timeout", gr::pmt::Value{matcher_timeout}},
+        {"digital_port_enable", gr::pmt::Value{digital_port_enable}},
+        {"verbose_console", gr::pmt::Value{true}},
     }});
 
-    auto& sinkA = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", true}, {"log_tags", true}});
-    auto& sinkB = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", true}, {"log_tags", false}});
-    auto& sinkC = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", true}, {"log_tags", false}});
-    auto& sinkD = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", true}, {"log_tags", false}});
+    auto& sinkA = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{true}}});
+    auto& sinkB = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+    auto& sinkC = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
+    auto& sinkD = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
 
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out">(timingSrc).template to<"timingIn">(ps)));
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 0>(ps).template to<"in">(sinkA)));
@@ -125,17 +125,17 @@ void testStreamingWithTiming(const float kSampleRate = 1000.f, const std::chrono
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 2>(ps).template to<"in">(sinkD)));
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 3>(ps).template to<"in">(sinkC)));
     if constexpr (TPSImpl::N_ANALOG_CHANNELS > 4) {
-        auto& sinkE = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkF = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkG = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkH = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkE = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkF = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkG = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkH = flowGraph.emplaceBlock<testing::TagSink<float, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 4>(ps).template to<"in">(sinkE)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 5>(ps).template to<"in">(sinkF)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 6>(ps).template to<"in">(sinkG)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 7>(ps).template to<"in">(sinkH)));
     }
 
-    auto& sinkDigital = flowGraph.emplaceBlock<testing::TagSink<uint16_t, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", true}, {"log_tags", false}});
+    auto& sinkDigital = flowGraph.emplaceBlock<testing::TagSink<uint16_t, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{false}}});
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"digitalOut">(ps).template to<"in">(sinkDigital)));
 
     std::jthread                                                 publishEvents = createTimingEventThread({
@@ -157,7 +157,7 @@ void testStreamingWithTiming(const float kSampleRate = 1000.f, const std::chrono
     gr::MsgPortOut _toScheduler;
     expect(_toScheduler.connect(sched.msgIn) == gr::ConnectionResult::SUCCESS) << fatal;
     std::this_thread::sleep_for(kDuration);
-    gr::sendMessage<gr::message::Command::Set>(_toScheduler, sched.unique_name, gr::block::property::kLifeCycleState, {{"state", std::string(magic_enum::enum_name(gr::lifecycle::State::REQUESTED_STOP))}}, "test");
+    gr::sendMessage<gr::message::Command::Set>(_toScheduler, sched.unique_name, gr::block::property::kLifeCycleState, {{"state", gr::pmt::Value{std::string(magic_enum::enum_name(gr::lifecycle::State::REQUESTED_STOP))}}}, "test");
     std::this_thread::sleep_for(10ms); // wait for the scheduler to actually stop processing -> otherwise process work will be called when the scheduler and graph have already been destroyed
 
     const auto measuredRate = static_cast<double>(sinkA._nSamplesProduced) / duration<double>(kDuration).count();
@@ -177,19 +177,19 @@ void testStreamingWithTiming(const float kSampleRate = 1000.f, const std::chrono
     if (!sinkA._tags.empty()) {
         const auto& tag = sinkA._tags[0];
         expect(eq(tag.index, 0UZ));
-        expect(eq(std::get<float>(tag.at(std::string(tag::SAMPLE_RATE.shortKey()))), kSampleRate));
-        expect(eq(std::get<std::string>(tag.at(std::string(tag::SIGNAL_NAME.shortKey()))), "IO1"s));
-        expect(eq(std::get<std::string>(tag.at(std::string(tag::SIGNAL_UNIT.shortKey()))), "V"s));
-        expect(eq(std::get<float>(tag.at(std::string(tag::SIGNAL_MIN.shortKey()))), -5.f));
-        expect(eq(std::get<float>(tag.at(std::string(tag::SIGNAL_MAX.shortKey()))), 5.f));
+        expect(eq(tag.at(std::string(tag::SAMPLE_RATE.shortKey())).value_or(INFINITY), kSampleRate));
+        expect(eq(tag.at(std::string(tag::SIGNAL_NAME.shortKey())).value_or(std::string{}), "IO1"s));
+        expect(eq(tag.at(std::string(tag::SIGNAL_UNIT.shortKey())).value_or(std::string{}), "V"s));
+        expect(eq(tag.at(std::string(tag::SIGNAL_MIN.shortKey())).value_or(INFINITY), -5.f));
+        expect(eq(tag.at(std::string(tag::SIGNAL_MAX.shortKey())).value_or(INFINITY), 5.f));
     }
-    expect(std::ranges::equal(sinkA._tags | std::views::filter([](auto& t) { return t.map.contains(gr::tag::CONTEXT.shortKey()); })                                                      // only consider timing events
-                                  | std::views::transform([](auto& t) { return std::get<uint16_t>(std::get<gr::property_map>(t.map[gr::tag::TRIGGER_META_INFO.shortKey()])["BPID"]); }), // get bpid (which is unique in this test)
+    expect(std::ranges::equal(sinkA._tags | std::views::filter([](auto& t) { return t.map.contains(gr::tag::CONTEXT.shortKey()); })                                                                                       // only consider timing events
+                                  | std::views::transform([](auto& t) { return t.map[gr::tag::TRIGGER_META_INFO.shortKey()].value_or(gr::property_map{})["BPID"].value_or(std::numeric_limits<std::uint16_t>::max()); }), // get bpid (which is unique in this test)
         std::vector<std::uint16_t>{1, 2, 3}))
         << "expected to get timing events with bpid 1, 2 and 3";
 
     auto chunks = sinkA._tags | std::views::filter([](auto& t) { return t.map.contains("chunk-start-time"); })                                                                                                                                                                                                          //
-                  | std::views::transform([kSampleRate](const auto& t) { return std::tuple(t.index, static_cast<float>(t.index) * 1e9f / kSampleRate, std::get<long>(t.map.at("chunk-start-time"))); })                                                                                                                 //
+                  | std::views::transform([kSampleRate](const auto& t) { return std::tuple(t.index, static_cast<float>(t.index) * 1e9f / kSampleRate, t.map.at("chunk-start-time").value_or(std::numeric_limits<long>::max())); })                                                                                      //
                   | std::views::pairwise_transform([](const auto& a, const auto& b) { return std::tuple(std::get<0>(b), std::get<0>(b) - std::get<0>(a), std::get<1>(b) - std::get<1>(a), std::get<2>(b) - std::get<2>(a), static_cast<float>(std::get<2>(b) - std::get<2>(a)) - (std::get<1>(b) - std::get<1>(a))); }) // compute chunk durations [index, indexdiff, delta t samples ns, delta t acq ns]
                   | std::ranges::to<std::vector>();
     std::println("Chunks:");
@@ -236,44 +236,44 @@ void testTriggeredAcquisitionWithTiming(const float kSampleRate = 1e5f, const st
 
     gr::Graph flowGraph;
     auto&     timingSrc = flowGraph.emplaceBlock<gr::timing::TimingSource>({
-        {"event_actions", std::vector<std::string>({
-                              "SIS100_RING->PUBLISH()", // monitor all events for the sis100 timing group
-                              std::format("SIS100_RING:CMD_BP_START->IO3({},on,{},off)", pulseOnTime, pulseOffTime),
+        {"event_actions", gr::Tensor<std::pmr::string>({
+                              std::pmr::string{"SIS100_RING->PUBLISH()"}, // monitor all events for the sis100 timing group
+                              std::pmr::string{std::format("SIS100_RING:CMD_BP_START->IO3({},on,{},off)", pulseOnTime, pulseOffTime)},
                           })},
-        {"io_events", true},
-        {"sample_rate", 0.0f}, // produce one sample per tag
-        {"verbose_console", true},
+        {"io_events", gr::pmt::Value{true}},
+        {"sample_rate", gr::pmt::Value{0.0f}}, // produce one sample per tag
+        {"verbose_console", gr::pmt::Value{true}},
     });
 
     const std::size_t samplesPre  = 100;
     const std::size_t samplesPost = static_cast<std::size_t>(static_cast<float>(acquisitionWindow.count()) * 1e-9f * kSampleRate);
 
     auto& ps = flowGraph.emplaceBlock<Picoscope<gr::DataSet<float>, TPSImpl>>({{
-        {"sample_rate", kSampleRate},
-        {"auto_arm", true},
-        {"channel_ids", std::vector<std::string>{"A", "B", TPSImpl::N_ANALOG_CHANNELS > 4 ? "H" : "D"}},
-        {"signal_names", std::vector<std::string>{"IO1", "IO2", "Trigger"}},
-        {"signal_units", std::vector<std::string>{"V", "V", "V"}},
-        {"channel_ranges", std::vector<float>{5.f, 5.f, 5.f}},
-        {"signal_offsets", std::vector<float>{0.f, 0.f, 0.f}},
-        {"channel_couplings", std::vector<std::string>{"DC", "DC", "DC"}},
-        {"trigger_source", triggerName},
-        {"trigger_threshold", 1.7f},
-        {"trigger_direction", "Rising"},
-        {"pre_samples", samplesPre},
-        {"post_samples", samplesPost},
-        {"n_captures", 1},
-        {"auto_arm", true},
+        {"sample_rate", gr::pmt::Value{kSampleRate}},
+        {"auto_arm", gr::pmt::Value{true}},
+        {"channel_ids", gr::Tensor<std::pmr::string>{"A", "B", TPSImpl::N_ANALOG_CHANNELS > 4 ? "H" : "D"}},
+        {"signal_names", gr::Tensor<std::pmr::string>{"IO1", "IO2", "Trigger"}},
+        {"signal_units", gr::Tensor<std::pmr::string>{"V", "V", "V"}},
+        {"channel_ranges", gr::Tensor<float>{5.f, 5.f, 5.f}},
+        {"signal_offsets", gr::Tensor<float>{0.f, 0.f, 0.f}},
+        {"channel_couplings", gr::Tensor<std::pmr::string>{"DC", "DC", "DC"}},
+        {"trigger_source", gr::pmt::Value{triggerName}},
+        {"trigger_threshold", gr::pmt::Value{1.7f}},
+        {"trigger_direction", gr::pmt::Value{"Rising"}},
+        {"pre_samples", gr::pmt::Value{samplesPre}},
+        {"post_samples", gr::pmt::Value{samplesPost}},
+        {"n_captures", gr::pmt::Value{1}},
+        {"auto_arm", gr::pmt::Value{true}},
         // {"digital_port_invert_output", digitalPortInvertOutput},
-        {"trigger_once", false},
-        {"matcher_timeout", 20'000'000}, // for triggered acquisition, there is no matcher state, so it doesn't make sense to have a timeout for more tags or samples to arrive
-        {"verbose_console", true},
+        {"trigger_once", gr::pmt::Value{false}},
+        {"matcher_timeout", gr::pmt::Value{20'000'000}}, // for triggered acquisition, there is no matcher state, so it doesn't make sense to have a timeout for more tags or samples to arrive
+        {"verbose_console", gr::pmt::Value{true}},
     }});
 
-    auto& sinkA = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", true}, {"log_tags", true}, {"verbose_console", true}});
-    auto& sinkB = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", true}, {"log_tags", true}});
-    auto& sinkC = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", true}, {"log_tags", true}});
-    auto& sinkD = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
+    auto& sinkA = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{true}}, {"verbose_console", gr::pmt::Value{true}}});
+    auto& sinkB = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{true}}});
+    auto& sinkC = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{true}}, {"log_tags", gr::pmt::Value{true}}});
+    auto& sinkD = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
 
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out">(timingSrc).template to<"timingIn">(ps)));
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 0>(ps).template to<"in">(sinkA)));
@@ -281,17 +281,17 @@ void testTriggeredAcquisitionWithTiming(const float kSampleRate = 1e5f, const st
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 2>(ps).template to<"in">(sinkC)));
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 3>(ps).template to<"in">(sinkD)));
     if constexpr (TPSImpl::N_ANALOG_CHANNELS > 4) {
-        auto& sinkE = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkF = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkG = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
-        auto& sinkH = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
+        auto& sinkE = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkF = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkG = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
+        auto& sinkH = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<float>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 4>(ps).template to<"in">(sinkE)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 5>(ps).template to<"in">(sinkF)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 6>(ps).template to<"in">(sinkG)));
         expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"out", 7>(ps).template to<"in">(sinkH)));
     }
 
-    auto& sinkDigital = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<uint16_t>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", false}, {"log_tags", false}});
+    auto& sinkDigital = flowGraph.emplaceBlock<testing::TagSink<gr::DataSet<uint16_t>, testing::ProcessFunction::USE_PROCESS_BULK>>({{"log_samples", gr::pmt::Value{false}}, {"log_tags", gr::pmt::Value{false}}});
     expect(eq(ConnectionResult::SUCCESS, flowGraph.connect<"digitalOut">(ps).template to<"in">(sinkDigital)));
 
     std::this_thread::sleep_for(1s);
@@ -322,7 +322,7 @@ void testTriggeredAcquisitionWithTiming(const float kSampleRate = 1e5f, const st
     expect(_toScheduler.connect(sched.msgIn) == gr::ConnectionResult::SUCCESS) << fatal;
     std::this_thread::sleep_for(kDuration);
     std::print("stopping scheduler");
-    gr::sendMessage<gr::message::Command::Set>(_toScheduler, sched.unique_name, gr::block::property::kLifeCycleState, {{"state", std::string(magic_enum::enum_name(gr::lifecycle::State::REQUESTED_STOP))}}, "test");
+    gr::sendMessage<gr::message::Command::Set>(_toScheduler, sched.unique_name, gr::block::property::kLifeCycleState, {{"state", gr::pmt::Value{std::string(magic_enum::enum_name(gr::lifecycle::State::REQUESTED_STOP))}}}, "test");
     std::this_thread::sleep_for(10ms); // wait for the scheduler to actually stop processing -> otherwise process work will be called when the scheduler and graph have already been destroyed
     std::println(" and assume it is finished after 10ms");
 
